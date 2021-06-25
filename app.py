@@ -3,6 +3,7 @@ import uuid
 import datetime
 from markupsafe import escape
 from flask_sqlalchemy import SQLAlchemy
+from numpy.core.numeric import outer
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, jsonify, flash, redirect, session
 
@@ -121,7 +122,7 @@ def authenticate(**kwargs):
     else:
         return False
 
-
+colss = ['Hospital_code','Hospital_type_code','City_Code_Hospital','Hospital_region_code', 'Department', 'Ward_Facility_Code', 'Type of Admission	Severity of Illness', 'Visitors with Patient', 'Age', 'Admission_Deposit']
 @app.route('/signin', methods=['GET', 'POST'])
 def signin():
     if request.method == 'POST':
@@ -162,25 +163,69 @@ def patients():
         return user_not_authenticated(404)
 
 
+def predictfrommodel(dataDict=None):
+    if dataDict == None:
+        app.logger.error('No Data Provided')
+        return False
+    datalist = [
+        dataDict['Hospital_code'],
+        dataDict['Hospital_type_code'],
+        dataDict['City_Code_Hospital'],
+        dataDict['Hospital_region_code'],
+        dataDict['Department'],
+        dataDict['Ward_Facility_Code'],
+        dataDict['Type of Admission'],
+        dataDict['Severity of Illness'],
+        dataDict['Visitors'],
+        dataDict['Age'],
+        dataDict['Admission_Deposit']
+    ]
+    app.logger.info(f'Datalist - {datalist}')
+    try:
+        import pickle
+        import pandas
+        from sklearn.preprocessing import StandardScaler
+    except ImportError as err:
+        app.logger.error(f'Could Not Found Necessary Library, {err}')
+    else:
+        with open('classifier.pickle', 'rb') as model:
+            classifierModel = pickle.load(model)
+            # Transforming
+            df = pandas.DataFrame(datalist)
+            app.logger.info(df.shape, df)
+            ss = StandardScaler()
+            df = ss.fit_transform(df)
+            result = classifierModel.predict(df)
+            app.logger.info(f'OutPut - {result}')
+            return result
+
+
 @app.route('/patients_model', methods=['GET', 'POST'])
 def modelCheck():
     if Checkpatients():
         dataDict = dict()
         if request.method == 'POST':
-            dataDict['Hospital_code'] = request.form.get('hospital_code')
-            dataDict['Hospital_type_code'] = request.form.get('hospital_type')
-            dataDict['City_Code_Hospital'] = request.form.get('city_code')
-            dataDict['Hospital_region_code'] = request.form.get('region_code')
-            dataDict['Department'] = request.form.get('dept')
-            dataDict['Ward_Facility_Code'] = request.form.get('ward_code')
-            dataDict['Type of Admission'] = request.form.get('type')
-            dataDict['Severity of Illness'] = request.form.get('severity')
-            dataDict['Visitors'] = request.form.get('visitors')
-            dataDict['Age'] = request.form.get('age')
-            dataDict['Admission_Deposit'] = request.form.get('deposit')
+            dataDict['Hospital_code'] = int(request.form.get('hospital_code'))
+            dataDict['Hospital_type_code'] = str(
+                request.form.get('hospital_type'))
+            dataDict['City_Code_Hospital'] = int(request.form.get('city_code'))
+            dataDict['Hospital_region_code'] = str(
+                request.form.get('region_code'))
+            dataDict['Department'] = str(request.form.get('dept'))
+            dataDict['Ward_Facility_Code'] = str(request.form.get('ward_code'))
+            dataDict['Type of Admission'] = str(request.form.get('type'))
+            dataDict['Severity of Illness'] = str(request.form.get('severity'))
+            dataDict['Visitors'] = int(request.form.get('visitors'))
+            dataDict['Age'] = int(request.form.get('age'))
+            dataDict['Admission_Deposit'] = float(request.form.get('deposit'))
             app.logger.debug(dataDict)
-        if request.method == 'GET':
-            return "Output is - "
+            output = predictfrommodel(dataDict)
+            return jsonify(
+                {
+                    "Data Entered": dataDict,
+                    "Output": output
+                }
+            )
     else:
         return jsonify(
             {
