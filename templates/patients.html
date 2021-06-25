@@ -96,15 +96,40 @@
 <body>
     <h1>Patients Details</h1>
     <div class="Register">
-        <form method="post" action="/patients_model">
-            <h2>Patients Details</h2>
-            <label>Name</label><br />
-            <input type="text" name="bname" id="name" placeholder="Enter  Name"><br />
-            <label>ward:</label><br />
-            <input type="number" name="accnum" id="name" placeholder="Enter ward"><br /></br>
-            <label>Hospital code:</label><br />
-            <input type="number" name="accnum" id="name" placeholder="Enter hospital code "><br /></br>
+        <h2>Patients Details</h2>
+        <form method="POST" action="/patients_model">
+            <label>Hospital_code</label><br />
+            <input type="text" name="hospital_code" placeholder="Enter Hospital Code" value="30"><br />
 
+            <label>Hospital_type_code</label><br />
+            <input type="text" name="hospital_type" placeholder="Enter Hospital Type Code" value="a"><br />
+
+            <label>City_Code_Hospital</label><br />
+            <input type="text" name="city_code" placeholder="Enter City Code Hospital" value="11"><br />
+
+            <label>Hospital_region_code</label><br />
+            <input type="text" name="region_code" placeholder="Enter Region Code" value="X"><br />
+
+            <label>Department</label><br />
+            <input type="text" name="dept" placeholder="Enter Department" value="gynecology"><br />
+
+            <label>Ward_Facility_Code</label><br />
+            <input type="text" name="ward_code" placeholder="Enter Ward Facility Code" value="F"><br />
+
+            <label>Type of Admission</label><br />
+            <input type="text" name="type" placeholder="Enter Type" value="Trauma"><br />
+
+            <label>Severity of Illness</label><br />
+            <input type="text" name="severity" placeholder="Enter  Severity og Illness" value="Moderate"><br />
+
+            <label>Visitors with Patient</label><br />
+            <input type="text" name="visitors" placeholder="Enter the no of Visitors" value="4"><br />
+
+            <label>Age</label><br />
+            <input type="text" name="age" placeholder="Enter Age" value="75"><br />
+
+            <label>Admission_Deposit</label><br />
+            <input type="text" name="deposit" placeholder="Enter  Admission Deposite" value="4161.0"><br />
 
             <input type="submit" value="Submit" id="sub">
         </form>

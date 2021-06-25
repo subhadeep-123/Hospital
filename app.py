@@ -162,18 +162,25 @@ def patients():
         return user_not_authenticated(404)
 
 
-@app.route('/patients_model')
+@app.route('/patients_model', methods=['GET', 'POST'])
 def modelCheck():
     if Checkpatients():
-        my_output_here = None
-        # TODO
-        # add model testing here
-        # add flask
-        return jsonify(
-            {
-                'Output': my_output_here
-            }
-        )
+        dataDict = dict()
+        if request.method == 'POST':
+            dataDict['Hospital_code'] = request.form.get('hospital_code')
+            dataDict['Hospital_type_code'] = request.form.get('hospital_type')
+            dataDict['City_Code_Hospital'] = request.form.get('city_code')
+            dataDict['Hospital_region_code'] = request.form.get('region_code')
+            dataDict['Department'] = request.form.get('dept')
+            dataDict['Ward_Facility_Code'] = request.form.get('ward_code')
+            dataDict['Type of Admission'] = request.form.get('type')
+            dataDict['Severity of Illness'] = request.form.get('severity')
+            dataDict['Visitors'] = request.form.get('visitors')
+            dataDict['Age'] = request.form.get('age')
+            dataDict['Admission_Deposit'] = request.form.get('deposit')
+            app.logger.debug(dataDict)
+        if request.method == 'GET':
+            return "Output is - "
     else:
         return jsonify(
             {
