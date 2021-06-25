@@ -1,0 +1,6 @@
+flask
+Flask-SQLAlchemy
+pandas
+sklearn
+numpy
+xgboost
