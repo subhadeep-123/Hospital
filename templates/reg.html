@@ -92,36 +92,6 @@
         }
     </style>
 
-    <!-- <script type="text/javascript">
-        function validate() {
-
-            var pas1 = document.reg.p1.value;
-            var pas2 = document.reg.p2.value;
-
-            if (pas1 != pas2) {
-                alert("Password does'nt match");
-                return false;
-            }
-
-            var ph = document.reg.mnum.value;
-            var phoneNum = /^([7-9]{1})([0-9]{9})$/;
-
-            if (!ph.match(phoneNum)) {
-                alert("Enter correct ph no ");
-                return false;
-            }
-
-
-            var e = document.reg.email.value;
-            var mail = /^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/;
-            if (!e.match(mail)) {
-                alert("Enter corret email");
-                return false;
-            }
-        }
-
-
-    </script> -->
 </head>
 
 <body>
@@ -149,7 +119,7 @@
             <label>Password:</label><br />
             <input type="password" name="password" id="pass" placeholder="Enter the Password" required><br />
             <label>Re-Enter your password:</label><br />
-            <input type="text" name="Repassword" id="name" placeholder="Re-Enter Password" required><br /></br>
+            <input type="password" name="Repassword" id="name" placeholder="Re-Enter Password" required><br /></br>
             <input type="submit" value="Submit" id="sub">
         </form>
     </div>
