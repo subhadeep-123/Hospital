@@ -1,9 +1,7 @@
 import os
 import uuid
 import datetime
-from markupsafe import escape
 from flask_sqlalchemy import SQLAlchemy
-from numpy.core.numeric import outer
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, jsonify, flash, redirect, session
 
@@ -273,12 +271,13 @@ def modelCheck():
             dataDict['Admission_Deposit'] = float(request.form.get('deposit'))
             app.logger.debug(dataDict)
             output = predictfrommodel(dataDict)
-            return jsonify(
-                {
-                    "Data Entered": dataDict,
-                    "Output": str(output[0])
-                }
-            )
+            return render_template('output.html', message=output[0])
+            # return jsonify(
+            #     {
+            #         "Data Entered": dataDict,
+            #         "Output (Ward Type)": str(output[0])
+            #     }
+            # )
     else:
         return jsonify(
             {
