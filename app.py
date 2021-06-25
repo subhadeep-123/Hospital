@@ -18,6 +18,13 @@ app.config.from_object('config.Production')
 db = SQLAlchemy(app)
 app.logger.setLevel(10)
 
+try:
+    import pickle
+    import pandas as pd
+    from sklearn.preprocessing import StandardScaler
+except ImportError as err:
+    app.logger.error(f'Could Not Found Necessary Library, {err}')
+
 
 class Users(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -122,7 +129,7 @@ def authenticate(**kwargs):
     else:
         return False
 
-colss = ['Hospital_code','Hospital_type_code','City_Code_Hospital','Hospital_region_code', 'Department', 'Ward_Facility_Code', 'Type of Admission	Severity of Illness', 'Visitors with Patient', 'Age', 'Admission_Deposit']
+
 @app.route('/signin', methods=['GET', 'POST'])
 def signin():
     if request.method == 'POST':
@@ -163,41 +170,87 @@ def patients():
         return user_not_authenticated(404)
 
 
+def getFrame(datalist, cols):
+    df = pd.DataFrame(datalist, cols)
+    return df
+
+
+def label_encoded(df):
+    from sklearn.preprocessing import LabelEncoder
+    le = LabelEncoder()
+    cat_cols = ['Hospital_type_code', 'Hospital_region_code', 'Department', 'Ward_Facility_Code',
+                'Type of Admission', 'Severity of Illness', 'Age', 'City_Code_Hospital']
+    for col in cat_cols:
+        df[col] = le.fit_transform(df[col])
+    return df
+
+
+def standard_encoded(df):
+    from sklearn.preprocessing import StandardScaler
+    num_cols = ['Hospital_code', 'Visitors with Patient', 'Admission_Deposit']
+    ss = StandardScaler()
+    df[num_cols] = ss.fit_transform(df[num_cols].values)
+    return df
+
+
 def predictfrommodel(dataDict=None):
     if dataDict == None:
         app.logger.error('No Data Provided')
         return False
     datalist = [
-        dataDict['Hospital_code'],
-        dataDict['Hospital_type_code'],
-        dataDict['City_Code_Hospital'],
-        dataDict['Hospital_region_code'],
-        dataDict['Department'],
-        dataDict['Ward_Facility_Code'],
-        dataDict['Type of Admission'],
-        dataDict['Severity of Illness'],
-        dataDict['Visitors'],
-        dataDict['Age'],
-        dataDict['Admission_Deposit']
+        (dataDict['Hospital_code'],
+         dataDict['Hospital_type_code'],
+         dataDict['City_Code_Hospital'],
+         dataDict['Hospital_region_code'],
+         dataDict['Department'],
+         dataDict['Ward_Facility_Code'],
+         dataDict['Type of Admission'],
+         dataDict['Severity of Illness'],
+         dataDict['Visitors'],
+         dataDict['Age'],
+         dataDict['Admission_Deposit'])
     ]
     app.logger.info(f'Datalist - {datalist}')
-    try:
-        import pickle
-        import pandas
-        from sklearn.preprocessing import StandardScaler
-    except ImportError as err:
-        app.logger.error(f'Could Not Found Necessary Library, {err}')
-    else:
-        with open('classifier.pickle', 'rb') as model:
-            classifierModel = pickle.load(model)
-            # Transforming
-            df = pandas.DataFrame(datalist)
-            app.logger.info(df.shape, df)
-            ss = StandardScaler()
-            df = ss.fit_transform(df)
-            result = classifierModel.predict(df)
-            app.logger.info(f'OutPut - {result}')
-            return result
+    colss = [
+        'Hospital_code',  # s
+        'Hospital_type_code',
+        'City_Code_Hospital',  # l
+        'Hospital_region_code',  # l
+        'Department',  # l
+        'Ward_Facility_Code',  # l
+        'Type of Admission',  # l
+        'Severity of Illness',  # l
+        'Visitors with Patient',  # s
+        'Age',  # l
+        'Admission_Deposit'  # s
+    ]
+    app.logger.info(f'Columns - {colss}')
+    df = pd.DataFrame(datalist, columns=colss)
+    from sklearn.preprocessing import LabelEncoder
+    le = LabelEncoder()
+    cat_cols = ['Hospital_type_code', 'Hospital_region_code', 'Department', 'Ward_Facility_Code',
+                'Type of Admission', 'Severity of Illness', 'Age', 'City_Code_Hospital']
+    for col in cat_cols:
+        df[col] = le.fit_transform(df[col])
+    from sklearn.preprocessing import StandardScaler
+    num_cols = ['Hospital_code', 'Visitors with Patient', 'Admission_Deposit']
+    ss = StandardScaler()
+    df[num_cols] = ss.fit_transform(df[num_cols].values)
+
+    # Data Preprocessing PipeLine
+    # df = getFrame(datalist, colss)
+    # app.logger.info(f'Dataframe - {df.values}')
+    # df = label_encoded(df)
+    # app.logger.info(f'Label Encoded Dataframe - {df.values}')
+    # df = standard_encoded(df)
+    # app.logger.info(f'Standard Encoded Dataframe - {df.values}')
+
+    with open('classifier.pickle', 'rb') as f:
+        model = pickle.load(f)
+        app.logger.info(f"Classifier Model - {model}")
+        pred = model.predict(df)
+        app.logger.info(f"Predicted Value - {pred}")
+        return pred
 
 
 @app.route('/patients_model', methods=['GET', 'POST'])
@@ -223,7 +276,7 @@ def modelCheck():
             return jsonify(
                 {
                     "Data Entered": dataDict,
-                    "Output": output
+                    "Output": str(output[0])
                 }
             )
     else:
