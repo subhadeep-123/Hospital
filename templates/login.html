@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title></title>
+    <style type="text/css">
+        body {
+            background-image: url("lg.jpg");
+        }
+
+        .aa {
+            width: 300px;
+            height: 380px;
+            background-color: mediumslateblue;
+            margin: 0 auto;
+            margin-top: 40px;
+            padding-top: 10px;
+            padding-left: 50px;
+            border-radius: 15px;
+            -webkit-border-radiius: 15px;
+            -o-border-radius: 15px;
+            -moz-border-radius: 15px;
+            font-weight: bolder;
+            box-shadow: insert;
+            color: white;
+        }
+    </style>
+    <!-- 
+    <script>
+        function validateform() {
+            var uname = document.myform.user.value;
+            var password = document.myform.pass.value;
+            var type = document.myform.utype.value;
+
+            if (type == "Donor") {
+                if (uname == "donor" && password == "12345") {
+                    alert("Login Successfull");
+                }
+                else {
+                    alert("Invalid username or password");
+                }
+            }
+            else if (type == "Receiver") {
+                if (uname == "rec" && password == "12345") {
+                    alert("Login Successfull");
+                }
+                else {
+                    alert("Invalid username or password");
+                }
+            }
+            else {
+
+                alert("Secect user type");
+
+            }
+        }
+    </script> -->
+
+</head>
+
+<body>
+    <div class="aa">
+        <h2>Admin Login</h2>
+        <form action="/signin" method="POST">
+            <!-- <p>User type</p>
+            <input type="text" name="utype" list="ulist" required>
+            <datalist id="ulist">
+                <option value="Donor" />
+                <option value="Receiver" />
+            </datalist> -->
+            <p>USERNAME</p>
+            <input type="text" name="user" id="u" placeholder="Username" required><br>
+            <p>PASSWORD</p>
+            <input type="password" name="pass" id="p" placeholder="Password" required><br><br />
+            <input type="submit" value="Login" onclick>
+        </form>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        {{ message }}
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+
+</body>
+
+</html>
