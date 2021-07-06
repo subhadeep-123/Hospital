@@ -11,7 +11,13 @@
 <body>
     <ul class="h1">
         <li><a>HOME</a></li>
-        <li><a href="/patients">PATIENTS</a></li>
+        <!-- <li><a href="/patients"></a></li> -->
+        <select
+            style="float: left; width: 200px; height: 40px; background-color: black; color: white; opacity:.8; line-height:40px; text-align: center; font-size: 15px; margin-right: 2px;"
+            onChange="window.location.href=this.value">
+            <option style="text-decoration:none; color: white; display: block;" value="/wardType">Ward Type</option>
+            <option style="text-decoration:none; color: white; display: block;" value="/Stay">Stay</option>
+        </select>
         <li><a href="/register">REGISTER</a></li>
         <li><a href="/login">LOGIN</a></li>
     </ul>

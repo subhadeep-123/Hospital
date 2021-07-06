@@ -137,7 +137,7 @@ def signin():
         app.logger.info('Login Data Recieved')
         if authenticate(**dataDict):
             flash('Login Successul')
-            return redirect('patients')
+            return redirect('wardType')
         else:
             flash('Login Unsuccessful, Check Username or password')
             return redirect('login')
@@ -159,7 +159,7 @@ def user_not_authenticated(error):
     return render_template('error.html'), error
 
 
-@app.route('/patients')
+@app.route('/wardType')
 def patients():
     if Checkpatients():
         return render_template('patients.html')
