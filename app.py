@@ -151,7 +151,7 @@ def signin():
         app.logger.info('Login Data Recieved')
         if authenticate(**dataDict):
             flash('Login Successul')
-            return redirect('wardType')
+            return redirect('/')
         else:
             flash('Login Unsuccessful, Check Username or password')
             return redirect('login')
@@ -174,10 +174,20 @@ def user_not_authenticated(error):
 
 
 @app.route('/wardType')
-def patients():
+def wardType():
     vl = Checkpatients()
     if vl:
-        return render_template('patients.html')
+        return render_template('ward.html')
+    else:
+        app.logger.error('About to return user_not_authenticated_error')
+        return user_not_authenticated(404)
+
+
+@app.route('/stay')
+def stay():
+    vl = Checkpatients()
+    if vl:
+        return render_template('stay.html')
     else:
         app.logger.error('About to return user_not_authenticated_error')
         return user_not_authenticated(404)
@@ -288,7 +298,7 @@ def modelCheck():
             dataDict['Admission_Deposit'] = request.form.get('deposit')
             app.logger.debug(dataDict)
             output = predictfrommodel(dataDict)
-            return render_template('output.html', message=output[0])
+            return render_template('output_ward.html', message=output[0])
             # return jsonify(
             #     {
             #         "Data Entered": dataDict,
