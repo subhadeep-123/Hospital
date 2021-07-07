@@ -1,6 +1,9 @@
 import os
+from re import S
 import uuid
+import joblib
 import datetime
+from flask import send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask import Flask, render_template, request, jsonify, flash, redirect, session
@@ -39,6 +42,17 @@ if not os.path.isfile('use_data.db'):
     db.create_all()
 else:
     app.logger.debug('Skipping the Database Creation File')
+
+# Classifiction Paramaters
+model = joblib.load('classsifier.bin')
+ss = joblib.load('std_scaler.bin')
+le = joblib.load('le_encoder.bin')
+
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'img/favicon.ico', mimetype='image/vnd.microsoft.icon')
 
 
 @app.route('/')
@@ -161,7 +175,8 @@ def user_not_authenticated(error):
 
 @app.route('/wardType')
 def patients():
-    if Checkpatients():
+    vl = Checkpatients()
+    if vl:
         return render_template('patients.html')
     else:
         app.logger.error('About to return user_not_authenticated_error')
@@ -179,7 +194,7 @@ def label_encoded(df):
     cat_cols = ['Hospital_type_code', 'Hospital_region_code', 'Department', 'Ward_Facility_Code',
                 'Type of Admission', 'Severity of Illness', 'Age', 'City_Code_Hospital']
     for col in cat_cols:
-        df[col] = le.fit_transform(df[col])
+        df[col] = le.transform(df[col])
     return df
 
 
@@ -187,7 +202,7 @@ def standard_encoded(df):
     from sklearn.preprocessing import StandardScaler
     num_cols = ['Hospital_code', 'Visitors with Patient', 'Admission_Deposit']
     ss = StandardScaler()
-    df[num_cols] = ss.fit_transform(df[num_cols].values)
+    df[num_cols] = ss.transform(df[num_cols].values)
     return df
 
 
@@ -224,31 +239,35 @@ def predictfrommodel(dataDict=None):
     ]
     app.logger.info(f'Columns - {colss}')
     df = pd.DataFrame(datalist, columns=colss)
+    app.logger.info('DataFrame')
+    print(df.head())
     from sklearn.preprocessing import LabelEncoder
-    le = LabelEncoder()
-    cat_cols = ['Hospital_type_code', 'Hospital_region_code', 'Department', 'Ward_Facility_Code',
-                'Type of Admission', 'Severity of Illness', 'Age', 'City_Code_Hospital']
+    # le = LabelEncoder()
+    cat_cols = ['Hospital_type_code',
+                'Hospital_region_code',
+                'Department',
+                'Ward_Facility_Code',
+                'Type of Admission',
+                'Severity of Illness',
+                'Age',
+                'City_Code_Hospital']
     for col in cat_cols:
         df[col] = le.fit_transform(df[col])
+    app.logger.info("After Label Encoading")
+    print(df.head())
     from sklearn.preprocessing import StandardScaler
     num_cols = ['Hospital_code', 'Visitors with Patient', 'Admission_Deposit']
-    ss = StandardScaler()
-    df[num_cols] = ss.fit_transform(df[num_cols].values)
+    # ss = StandardScaler()
+    df[num_cols] = ss.transform(df[num_cols].values)
+    app.logger.info("After Standard Scaling")
+    print(df.head())
 
-    # Data Preprocessing PipeLine
-    # df = getFrame(datalist, colss)
-    # app.logger.info(f'Dataframe - {df.values}')
-    # df = label_encoded(df)
-    # app.logger.info(f'Label Encoded Dataframe - {df.values}')
-    # df = standard_encoded(df)
-    # app.logger.info(f'Standard Encoded Dataframe - {df.values}')
-
-    with open('classifier.pickle', 'rb') as f:
-        model = pickle.load(f)
-        app.logger.info(f"Classifier Model - {model}")
-        pred = model.predict(df)
-        app.logger.info(f"Predicted Value - {pred}")
-        return pred
+    # with open('classifier.pickle', 'rb') as f:
+    # model = pickle.load(f)
+    app.logger.info(f"Classifier Model - {model}")
+    pred = model.predict(df)
+    app.logger.info(f"Predicted Value - {pred}")
+    return pred
 
 
 @app.route('/patients_model', methods=['GET', 'POST'])
@@ -256,19 +275,17 @@ def modelCheck():
     if Checkpatients():
         dataDict = dict()
         if request.method == 'POST':
-            dataDict['Hospital_code'] = int(request.form.get('hospital_code'))
-            dataDict['Hospital_type_code'] = str(
-                request.form.get('hospital_type'))
-            dataDict['City_Code_Hospital'] = int(request.form.get('city_code'))
-            dataDict['Hospital_region_code'] = str(
-                request.form.get('region_code'))
-            dataDict['Department'] = str(request.form.get('dept'))
-            dataDict['Ward_Facility_Code'] = str(request.form.get('ward_code'))
-            dataDict['Type of Admission'] = str(request.form.get('type'))
-            dataDict['Severity of Illness'] = str(request.form.get('severity'))
-            dataDict['Visitors'] = int(request.form.get('visitors'))
-            dataDict['Age'] = int(request.form.get('age'))
-            dataDict['Admission_Deposit'] = float(request.form.get('deposit'))
+            dataDict['Hospital_code'] = request.form.get('hospital_code')
+            dataDict['Hospital_type_code'] = request.form.get('hospital_type')
+            dataDict['City_Code_Hospital'] = request.form.get('city_code')
+            dataDict['Hospital_region_code'] = request.form.get('region_code')
+            dataDict['Department'] = request.form.get('dept')
+            dataDict['Ward_Facility_Code'] = request.form.get('ward_code')
+            dataDict['Type of Admission'] = request.form.get('type')
+            dataDict['Severity of Illness'] = request.form.get('severity')
+            dataDict['Visitors'] = request.form.get('visitors')
+            dataDict['Age'] = request.form.get('age')
+            dataDict['Admission_Deposit'] = request.form.get('deposit')
             app.logger.debug(dataDict)
             output = predictfrommodel(dataDict)
             return render_template('output.html', message=output[0])
