@@ -43,11 +43,6 @@ if not os.path.isfile('use_data.db'):
 else:
     app.logger.debug('Skipping the Database Creation File')
 
-# Classifiction Paramaters
-model = joblib.load('classsifier.bin')
-ss = joblib.load('std_scaler.bin')
-le = joblib.load('le_encoder.bin')
-
 
 @app.route('/favicon.ico')
 def favicon():
@@ -193,33 +188,14 @@ def stay():
         return user_not_authenticated(404)
 
 
-def getFrame(datalist, cols):
-    df = pd.DataFrame(datalist, cols)
-    return df
-
-
-def label_encoded(df):
-    from sklearn.preprocessing import LabelEncoder
-    le = LabelEncoder()
-    cat_cols = ['Hospital_type_code', 'Hospital_region_code', 'Department', 'Ward_Facility_Code',
-                'Type of Admission', 'Severity of Illness', 'Age', 'City_Code_Hospital']
-    for col in cat_cols:
-        df[col] = le.transform(df[col])
-    return df
-
-
-def standard_encoded(df):
-    from sklearn.preprocessing import StandardScaler
-    num_cols = ['Hospital_code', 'Visitors with Patient', 'Admission_Deposit']
-    ss = StandardScaler()
-    df[num_cols] = ss.transform(df[num_cols].values)
-    return df
-
-
-def predictfrommodel(dataDict=None):
+def predictWard(dataDict=None):
     if dataDict == None:
         app.logger.error('No Data Provided')
         return False
+    # Classifiction Paramaters
+    model = joblib.load('classsifier.bin')
+    ss = joblib.load('std_scaler.bin')
+    le = joblib.load('le_encoder.bin')
     datalist = [
         (dataDict['Hospital_code'],
          dataDict['Hospital_type_code'],
@@ -251,8 +227,6 @@ def predictfrommodel(dataDict=None):
     df = pd.DataFrame(datalist, columns=colss)
     app.logger.info('DataFrame')
     print(df.head())
-    from sklearn.preprocessing import LabelEncoder
-    # le = LabelEncoder()
     cat_cols = ['Hospital_type_code',
                 'Hospital_region_code',
                 'Department',
@@ -265,23 +239,18 @@ def predictfrommodel(dataDict=None):
         df[col] = le.fit_transform(df[col])
     app.logger.info("After Label Encoading")
     print(df.head())
-    from sklearn.preprocessing import StandardScaler
     num_cols = ['Hospital_code', 'Visitors with Patient', 'Admission_Deposit']
-    # ss = StandardScaler()
     df[num_cols] = ss.transform(df[num_cols].values)
     app.logger.info("After Standard Scaling")
     print(df.head())
-
-    # with open('classifier.pickle', 'rb') as f:
-    # model = pickle.load(f)
     app.logger.info(f"Classifier Model - {model}")
     pred = model.predict(df)
     app.logger.info(f"Predicted Value - {pred}")
     return pred
 
 
-@app.route('/patients_model', methods=['GET', 'POST'])
-def modelCheck():
+@app.route('/patients_model_ward', methods=['GET', 'POST'])
+def modelCheckWard():
     if Checkpatients():
         dataDict = dict()
         if request.method == 'POST':
@@ -297,14 +266,96 @@ def modelCheck():
             dataDict['Age'] = request.form.get('age')
             dataDict['Admission_Deposit'] = request.form.get('deposit')
             app.logger.debug(dataDict)
-            output = predictfrommodel(dataDict)
+            output = predictWard(dataDict)
             return render_template('output_ward.html', message=output[0])
-            # return jsonify(
-            #     {
-            #         "Data Entered": dataDict,
-            #         "Output (Ward Type)": str(output[0])
-            #     }
-            # )
+    else:
+        return jsonify(
+            {
+                'error message': 'Authentication Unsuccessful, Login'
+            }
+        )
+
+
+def predictStat(dataDict=None):
+    if dataDict == None:
+        app.logger.error('No Data Provided')
+        return False
+    # Classifiction Paramaters
+    model = joblib.load('classsifier_stay.bin')
+    ss = joblib.load('std_scaler_stay.bin')
+    le = joblib.load('le_encoder_stay.bin')
+    datalist = [
+        (dataDict['Hospital_code'],
+         dataDict['Hospital_type_code'],
+         dataDict['City_Code_Hospital'],
+         dataDict['Hospital_region_code'],
+         dataDict['Department'],
+         dataDict['Ward_Facility_Code'],
+         dataDict['Type of Admission'],
+         dataDict['Severity of Illness'],
+         dataDict['Visitors'],
+         dataDict['Age'],
+         dataDict['Admission_Deposit'])
+    ]
+    app.logger.info(f'Datalist - {datalist}')
+    colss = [
+        'Hospital_code',  # s
+        'Hospital_type_code',
+        'City_Code_Hospital',  # l
+        'Hospital_region_code',  # l
+        'Department',  # l
+        'Ward_Facility_Code',  # l
+        'Type of Admission',  # l
+        'Severity of Illness',  # l
+        'Visitors with Patient',  # s
+        'Age',  # l
+        'Admission_Deposit'  # s
+    ]
+    app.logger.info(f'Columns - {colss}')
+    df = pd.DataFrame(datalist, columns=colss)
+    app.logger.info('DataFrame')
+    print(df.head())
+    cat_cols = ['Hospital_type_code',
+                'Hospital_region_code',
+                'Department',
+                'Ward_Facility_Code',
+                'Type of Admission',
+                'Severity of Illness',
+                'Age',
+                'City_Code_Hospital']
+    for col in cat_cols:
+        df[col] = le.fit_transform(df[col])
+    app.logger.info("After Label Encoading")
+    print(df.head())
+    num_cols = ['Hospital_code', 'Visitors with Patient', 'Admission_Deposit']
+    df[num_cols] = ss.transform(df[num_cols].values)
+    app.logger.info("After Standard Scaling")
+    print(df.head())
+    app.logger.info(f"Classifier Model - {model}")
+    pred = model.predict(df)
+    app.logger.info(f"Predicted Value - {pred}")
+    return pred
+
+
+@app.route('/patients_model_stay', methods=['GET', 'POST'])
+def modelCheckStay():
+    if Checkpatients():
+        dataDict = dict()
+        if request.method == 'POST':
+            dataDict['Hospital_code'] = request.form.get('hospital_code')
+            dataDict['Hospital_type_code'] = request.form.get('hospital_type')
+            dataDict['City_Code_Hospital'] = request.form.get('city_code')
+            dataDict['Hospital_region_code'] = request.form.get('region_code')
+            dataDict['Department'] = request.form.get('dept')
+            dataDict['Ward_Facility_Code'] = request.form.get('ward_code')
+            dataDict['Type of Admission'] = request.form.get('type')
+            dataDict['Severity of Illness'] = request.form.get('severity')
+            dataDict['Visitors'] = request.form.get('visitors')
+            dataDict['Age'] = request.form.get('age')
+            dataDict['Admission_Deposit'] = request.form.get('deposit')
+            app.logger.debug(dataDict)
+            output = predictStat(dataDict)
+            return render_template('output_stay.html', message=output[0])
     else:
         return jsonify(
             {
